@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -125,7 +126,9 @@ public class RootNode {
 		for (ICodeLoader codeLoader : loadedInputs) {
 			codeLoader.visitClasses(cls -> {
 				try {
-					addClassNode(new ClassNode(RootNode.this, cls));
+					Predicate<String> classFilter = args.getClassFilter();
+					if (classFilter == null || classFilter.test(cls.getType()))
+						addClassNode(new ClassNode(RootNode.this, cls));
 				} catch (Exception e) {
 					addDummyClass(cls, e);
 				}

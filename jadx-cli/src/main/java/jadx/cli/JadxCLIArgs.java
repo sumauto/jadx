@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,6 +52,9 @@ public class JadxCLIArgs {
 
 	@Parameter(names = { "-s", "--no-src" }, description = "do not decompile source code")
 	protected boolean skipSources = false;
+
+	@Parameter(names = { "--classes" }, description = "decompile the specified classes or package,Separate multiple rules by a comma.")
+	protected String classes = null;
 
 	@Parameter(names = { "--single-class" }, description = "decompile a single class, full name, raw or alias")
 	protected String singleClass = null;
@@ -349,6 +353,13 @@ public class JadxCLIArgs {
 		args.setIntegerFormat(integerFormat);
 		args.setUseDxInput(useDx);
 		args.setPluginOptions(pluginOptions);
+		if (classes!=null){
+			String[] rules = classes.split(",");
+			for (int i = 0; i < rules.length; i++) {
+				rules[i] = 'L'+rules[i].replace(".", "/");
+			}
+			args.setClassFilter(new ClassFilter(rules));
+		}
 		return args;
 	}
 
@@ -538,6 +549,24 @@ public class JadxCLIArgs {
 
 	public Map<String, String> getPluginOptions() {
 		return pluginOptions;
+	}
+
+	static class ClassFilter implements Predicate<String>{
+		private final String[] rules;
+
+		public ClassFilter(String[] rules) {
+			this.rules = rules;
+		}
+
+		@Override
+		public boolean test(String s) {
+			for (String p : rules) {
+				if (s.startsWith(p)) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	static class RenameConverter implements IStringConverter<Set<RenameEnum>> {
